@@ -11,7 +11,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
 
   const startRecording = async () => {
     if (!isLoggedIn) {
-      toast.error("Önce giriş yapmalısınız.");
+      toast.error("Önce giriş yapmalısınızzzz.");
       return;
     }
 
