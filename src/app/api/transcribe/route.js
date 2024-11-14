@@ -45,6 +45,6 @@ export default async function handler(req, res) {
     }
   } else {
     // Eğer istek POST değilse, 405 (Method Not Allowed) döndürülür.
-    res.status(405).json({ error: 'Method Not Allowed' });
+    res.status(405).json({ error: 'Method Not Alloweds' });
   }
 }
