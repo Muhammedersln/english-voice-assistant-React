@@ -1,48 +1,40 @@
-import fetch from 'node-fetch';
+import axios from 'axios';
 import FormData from 'form-data';
 
 export async function POST(req) {
   try {
-    // Gelen ses dosyasını Buffer formatına dönüştürme
+    // Ses dosyasını buffer formatında al
     const audioBuffer = await req.arrayBuffer();
     const audioBufferConverted = Buffer.from(audioBuffer);
 
-    // OpenAI API isteği için FormData hazırlığı
+    // FormData oluştur ve ses dosyasını ekle
     const formData = new FormData();
     formData.append('file', audioBufferConverted, {
       filename: 'audio.wav',
       contentType: 'audio/wav',
     });
     formData.append('model', 'whisper-1');
-    formData.append('language', 'en'); // Dil seçeneği ekleyin (isteğe bağlı)
+    formData.append('language', 'en'); // İsteğe bağlı dil belirtme
 
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
+    // OpenAI API isteği için axios kullanarak dosyayı gönder
+    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(), // FormData için gerekli header ayarları
+        ...formData.getHeaders(),
       },
-      body: formData,
     });
 
-    const result = await response.json();
-
-    if (response.ok) {
-      return new Response(JSON.stringify({ text: result.text }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } else {
-      console.error("Error response from OpenAI API:", result); // Hata detayını konsola yazdırın
-      return new Response(
-        JSON.stringify({ error: result.error.message }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    // Başarılı yanıtı döndür
+    return new Response(JSON.stringify({ text: response.data.text }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error("Server error:", error.message); // Sunucu hatasını konsola yazdırın
+    // Hata durumunda yanıt döndür
+    const errorMessage = error.response?.data?.error?.message || error.message;
+    console.error("Error Response:", errorMessage);
     return new Response(
-      JSON.stringify({ error: 'Sunucu hatası', details: error.message }),
+      JSON.stringify({ error: 'Sunucu hatası', details: errorMessage }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
