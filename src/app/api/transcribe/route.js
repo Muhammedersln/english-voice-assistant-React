@@ -1,70 +1,48 @@
-import axios from 'axios';
+import fetch from 'node-fetch';
 import FormData from 'form-data';
 
-export const config = {
-  api: {
-    bodyParser: false, // Disable default body parsing, as we need to handle raw data
-  },
-};
-
-export async function POST(req, res) {
+export async function POST(req) {
   try {
-    console.log('API request starting...');
+    // Gelen ses dosyasını alıp Buffer formatına dönüştürelim
+    const audioBuffer = await req.arrayBuffer();
+    const audioBufferConverted = Buffer.from(audioBuffer);
 
-    // Get raw data from the request
-    const chunks = [];
-    req.on('data', (chunk) => {
-      chunks.push(chunk);
+    
+    // Ses dosyasını OpenAI API'ye gönder
+    const formData = new FormData();
+    formData.append('file', audioBufferConverted, {
+      filename: 'audio.wav',
+      contentType: 'audio/wav',
+    });
+    formData.append('model', 'whisper-1'); // Whisper modelini burada ekledik
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        ...formData.getHeaders() // FormData'nın gerekli header'ları otomatik ayarlamasını sağlıyoruz
+      },
+      body: formData,
     });
 
-    req.on('end', async () => {
-      const audioBuffer = Buffer.concat(chunks);
-      console.log('Audio file converted to Buffer format.');
+    const result = await response.json();
+   
 
-      // Create FormData for the OpenAI API request
-      const formData = new FormData();
-      formData.append('file', audioBuffer, {
-        filename: 'audio.wav',
-        contentType: 'audio/wav',
+    if (response.ok) {
+      return new Response(JSON.stringify({ text: result.text }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
       });
-      formData.append('model', 'whisper-1');
-
-      console.log('FormData created and audio file added.');
-
-      try {
-        // Make API request to OpenAI
-        const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            ...formData.getHeaders(),
-          },
-        });
-
-        console.log('API request sent and response received:', response.data);
-
-        // Return response from OpenAI
-        return res.status(200).json({ text: response.data.text });
-      } catch (error) {
-        if (error.response) {
-          console.error('API Error:', error.response.data);
-          return res.status(error.response.status).json({
-            error: error.response.data.error.message || 'Unknown error',
-          });
-        } else {
-          console.error('Server error:', error.message);
-          return res.status(500).json({
-            error: 'Server error',
-            details: error.message,
-          });
-        }
-      }
-    });
-
+    } else {
+      return new Response(
+        JSON.stringify({ error: result.error.message }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
   } catch (error) {
-    console.error('Unexpected error:', error.message);
-    return res.status(500).json({
-      error: 'Unexpected server error',
-      details: error.message,
-    });
+    return new Response(
+      JSON.stringify({ error: 'Sunucu hatası', details: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
