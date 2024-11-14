@@ -20,7 +20,7 @@ export async function POST(req) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders() // FormData'nın gerekli header'ları otomatik ayarlamasını sağlıyoruz
+        ...formData.getHeaders() // FormData'nın gerekli header'ları otomatik ayarlamasını sağlıyoruzzzzzzzzzzzzzzz
       },
       body: formData,
     });
