@@ -1,13 +1,12 @@
 import axios from 'axios';
 import FormData from 'form-data';
 
-// POST method handler
 export async function POST(req) {
   try {
     console.log('API isteği başlatılıyor...');
 
     // Gelen ses dosyasını alıp Buffer formatına dönüştürelim
-    const audioBuffer = await req.arrayBuffer(); // Using arrayBuffer for audio files
+    const audioBuffer = await req.arrayBuffer();
     const audioBufferConverted = Buffer.from(audioBuffer);
     console.log('Ses dosyası Buffer formatına dönüştürüldü.');
 
@@ -25,8 +24,8 @@ export async function POST(req) {
     const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(),
-      },
+        ...formData.getHeaders()
+      }
     });
 
     console.log('API isteği gönderildi ve yanıt alındı:', response.data);
@@ -36,6 +35,7 @@ export async function POST(req) {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
+    
   } catch (error) {
     // Hata mesajını kontrol et
     if (error.response) {
