@@ -1,32 +1,47 @@
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 
+// API anahtarının doğru çalışıp çalışmadığını kontrol eden fonksiyon
+async function testAPIKey() {
+  try {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+    });
+    if (response.ok) {
+      console.log("API anahtarı çalışıyor");
+    } else {
+      const error = await response.json();
+      console.error("API anahtarıyla ilgili bir sorun var:", error);
+    }
+  } catch (error) {
+    console.error("API anahtarı testi sırasında bir hata oluştu:", error.message);
+  }
+}
+
+// API anahtarının geçerli olup olmadığını test et
+testAPIKey();
+
 export async function POST(req) {
   try {
-    // Ses dosyasını alıp Buffer formatına dönüştürme
-    const audioBuffer = await req.arrayBuffer();
-    const audioBufferConverted = Buffer.from(new Uint8Array(audioBuffer));
+    // Gelen ses dosyasını alıp Blob formatına dönüştürme
+    const audioBlob = await req.blob();
 
     // Ses dosyasını OpenAI API'ye göndermek için FormData kullanımı
     const formData = new FormData();
-    formData.append('file', audioBufferConverted, {
-      filename: 'audio.wav',
-      contentType: 'audio/wav',
-    });
+    formData.append('file', audioBlob, 'audio.wav'); // Blob ile filename belirtildi
     formData.append('model', 'whisper-1'); // Whisper modelini burada ekledik
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(), // FormData'nın gerekli header'ları otomatik ayarlamasını sağlıyoruz
+        ...formData.getHeaders(),
       },
       body: formData,
     });
 
-    // Yanıtı JSON formatında alma ve hata durumunda detaylı mesaj gösterme
     const result = await response.json();
-    console.log(result); // Hata durumunda Vercel'de hata mesajını görmek için loglama
+    console.log("API yanıtı:", result); // Hata durumunda detaylı mesaj görmek için loglama
 
     if (response.ok) {
       return new Response(JSON.stringify({ text: result.text }), {
