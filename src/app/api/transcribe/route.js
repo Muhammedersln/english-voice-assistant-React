@@ -1,4 +1,5 @@
 import axios from 'axios';
+import FormData from 'form-data';
 
 export async function POST(req) {
   try {
@@ -6,20 +7,19 @@ export async function POST(req) {
     const audioBuffer = await req.arrayBuffer();
     const audioBufferConverted = Buffer.from(audioBuffer);
 
-    // Ses dosyasını Base64 formatına çevir
-    const audioBase64 = audioBufferConverted.toString('base64');
-
-    // API için payload (yük) oluştur
-    const data = {
-      file: audioBase64, // Base64 formatında dosya içeriği
-      model: 'whisper-1',
-    };
+    // FormData oluştur ve dosya ile model bilgilerini ekle
+    const formData = new FormData();
+    formData.append('file', audioBufferConverted, {
+      filename: 'audio.wav',
+      contentType: 'audio/wav',
+    });
+    formData.append('model', 'whisper-1');
 
     // OpenAI API'ye istek gönder
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', data, {
+    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
+        ...formData.getHeaders(), // FormData başlıkları
       },
     });
 
