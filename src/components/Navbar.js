@@ -6,7 +6,7 @@ import { FaSignInAlt, FaUserPlus, FaBars, FaTimes } from "react-icons/fa";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: session } = useSession(); // Oturum bilgilerini al
+  const { data: session } = useSession(); // Oturum bilgilerini alalım
 
   return (
     <nav className="bg-secondary p-5 px-4 md:px-16">
