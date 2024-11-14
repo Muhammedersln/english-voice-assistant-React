@@ -1,5 +1,4 @@
 import axios from 'axios';
-import FormData from 'form-data';
 
 export async function POST(req) {
   try {
@@ -7,19 +6,20 @@ export async function POST(req) {
     const audioBuffer = await req.arrayBuffer();
     const audioBufferConverted = Buffer.from(audioBuffer);
 
-    // FormData oluştur ve dosya ile model bilgilerini ekle
-    const formData = new FormData();
-    formData.append('file', audioBufferConverted, {
-      filename: 'audio.wav',
-      contentType: 'audio/wav',
-    });
-    formData.append('model', 'whisper-1');
+    // Ses dosyasını Base64 formatına çevir
+    const audioBase64 = audioBufferConverted.toString('base64');
+
+    // API için payload (yük) oluştur
+    const data = {
+      file: audioBase64, // Base64 formatında dosya içeriği
+      model: 'whisper-1',
+    };
 
     // OpenAI API'ye istek gönder
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', data, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(), // FormData başlıkları
+        'Content-Type': 'application/json',
       },
     });
 
@@ -29,9 +29,9 @@ export async function POST(req) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    // Hata detaylarını loglayın ve yanıt döndür
+    // Hata detaylarını logla ve yanıt döndür
     console.error("Hata Detayları:", error.response ? error.response.data : error.message);
-    
+
     return new Response(
       JSON.stringify({
         error: 'Sunucu hatası',
