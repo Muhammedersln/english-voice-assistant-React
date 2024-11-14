@@ -3,30 +3,28 @@ import FormData from 'form-data';
 
 export async function POST(req) {
   try {
-    // Gelen ses dosyasını alıp Buffer formatına dönüştürelim
+    // Ses dosyasını alıp Buffer formatına dönüştür
     const audioBuffer = await req.arrayBuffer();
     const audioBufferConverted = Buffer.from(audioBuffer);
 
-    
-    // Ses dosyasını OpenAI API'ye gönder
+    // Ses dosyasını OpenAI API'ye göndermek için formData oluştur
     const formData = new FormData();
     formData.append('file', audioBufferConverted, {
       filename: 'audio.wav',
       contentType: 'audio/wav',
     });
-    formData.append('model', 'whisper-1'); // Whisper modelini burada ekledik
+    formData.append('model', 'whisper-1');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': `multipart/form-data; boundary=${formData.getBoundary()}`
       },
       body: formData,
     });
 
     const result = await response.json();
-   
 
     if (response.ok) {
       return new Response(JSON.stringify({ text: result.text }), {
