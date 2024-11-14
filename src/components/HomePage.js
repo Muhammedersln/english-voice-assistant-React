@@ -103,7 +103,7 @@ export default function HomePage() {
       handleSendToChatGPT(transcribedText);
     }
   }, [transcribedText]);
-
+  console.log(aiResponse);
   return (
     <div className="bg-bgpage min-h-screen flex flex-col pb-28 overflow-hidden">
       <Toaster position="top-center" reverseOrder={false} />
