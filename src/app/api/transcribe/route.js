@@ -10,13 +10,12 @@ export async function POST(req) {
     // FormData oluştur ve ses dosyasını ekle
     const formData = new FormData();
     formData.append('file', audioBufferConverted, {
-      filename: 'audio.wav',
-      contentType: 'audio/wav',
+      filename: 'audio.wav', // Dosya adının doğru ve benzersiz olmasına dikkat edin
+      contentType: 'audio/wav', // Ses dosyasının biçimi
     });
     formData.append('model', 'whisper-1');
-    formData.append('language', 'en'); // İsteğe bağlı dil belirtme
-
-    // OpenAI API isteği için axios kullanarak dosyayı gönder
+    // Ek parametreler ekleyin
+    // Whisper API ile axios isteği
     const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -30,11 +29,11 @@ export async function POST(req) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    // Hata durumunda yanıt döndür
-    const errorMessage = error.response?.data?.error?.message || error.message;
-    console.error("Error Response:", errorMessage);
+    // Hata mesajını ayrıntılı bir şekilde döndür
+    const errorMessage = error.response?.data?.error?.message || "Bilinmeyen bir transkripsiyon hatası";
+    console.error("Error Response:", errorMessage); // Hata detayını konsola yazdır
     return new Response(
-      JSON.stringify({ error: 'Sunucu hatası', details: errorMessage }),
+      JSON.stringify({ error: 'Transkripsiyon hatası', details: errorMessage }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
