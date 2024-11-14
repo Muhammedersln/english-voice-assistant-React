@@ -30,7 +30,7 @@ const authOptions = {
           throw new Error("Geçersiz şifre.");
         }
 
-        console.log("Giriş başarılı:", user);
+        console.log("Giriş başarılıı:", user);
         return { id: user.id, name: user.name, email: user.email };
       },
     }),
