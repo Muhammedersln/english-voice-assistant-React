@@ -2,13 +2,13 @@ import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const prisma = global.prisma || new PrismaClient();
+if (process.env.NODE_ENV === 'development') global.prisma = prisma;
 
 export const POST = async (req) => {
   try {
     const { name, email, password } = await req.json();
 
-    // Tüm alanların doldurulduğunu kontrol et
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Tüm alanlar zorunludur." },
@@ -16,15 +16,13 @@ export const POST = async (req) => {
       );
     }
 
-    // Şifreyi hashleme
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Yeni kullanıcıyı veritabanına kaydetme
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
-        password: hashedPassword, // Hashlenmiş şifreyi kaydet
+        password: hashedPassword,
       },
     });
 
