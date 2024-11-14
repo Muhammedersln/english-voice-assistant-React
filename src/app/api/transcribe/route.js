@@ -1,8 +1,7 @@
 import fetch from 'node-fetch';
-import FormData from 'form-data';
 
 export const config = {
-  runtime: 'nodejs', // Vercel sunucu uyumluluğunu sağlar
+  runtime: 'nodejs',
 };
 
 export async function POST(req) {
@@ -11,21 +10,28 @@ export async function POST(req) {
     const audioBuffer = await req.arrayBuffer();
     const audioBufferConverted = Buffer.from(audioBuffer);
 
-    // OpenAI API isteği için FormData hazırlığı
-    const formData = new FormData();
-    formData.append('file', audioBufferConverted, {
-      filename: 'audio.wav',
-      contentType: 'audio/wav',
-    });
-    formData.append('model', 'whisper-1');
+    // Sınır (boundary) tanımlayalım
+    const boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW';
+
+    // Gövde (body) verisini `multipart/form-data` formatında manuel oluşturma
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\n`),
+      Buffer.from('Content-Disposition: form-data; name="file"; filename="audio.wav"\r\n'),
+      Buffer.from('Content-Type: audio/wav\r\n\r\n'),
+      audioBufferConverted,
+      Buffer.from(`\r\n--${boundary}\r\n`),
+      Buffer.from('Content-Disposition: form-data; name="model"\r\n\r\n'),
+      Buffer.from('whisper-1\r\n'),
+      Buffer.from(`--${boundary}--\r\n`),
+    ]);
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(), // FormData için gerekli header ayarları
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
       },
-      body: formData,
+      body,
     });
 
     const result = await response.json();
