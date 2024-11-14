@@ -3,12 +3,11 @@ import FormData from 'form-data';
 
 export async function POST(req) {
   try {
-    // Gelen ses dosyasını alıp Buffer formatına dönüştürelim
+    // Ses dosyasını alıp Buffer formatına dönüştürme
     const audioBuffer = await req.arrayBuffer();
-    const audioBufferConverted = Buffer.from(audioBuffer);
+    const audioBufferConverted = Buffer.from(new Uint8Array(audioBuffer));
 
-    
-    // Ses dosyasını OpenAI API'ye gönder
+    // Ses dosyasını OpenAI API'ye göndermek için FormData kullanımı
     const formData = new FormData();
     formData.append('file', audioBufferConverted, {
       filename: 'audio.wav',
@@ -20,13 +19,14 @@ export async function POST(req) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders() // FormData'nın gerekli header'ları otomatik ayarlamasını sağlıyoruz
+        ...formData.getHeaders(), // FormData'nın gerekli header'ları otomatik ayarlamasını sağlıyoruz
       },
       body: formData,
     });
 
+    // Yanıtı JSON formatında alma ve hata durumunda detaylı mesaj gösterme
     const result = await response.json();
-   
+    console.log(result); // Hata durumunda Vercel'de hata mesajını görmek için loglama
 
     if (response.ok) {
       return new Response(JSON.stringify({ text: result.text }), {
@@ -35,7 +35,7 @@ export async function POST(req) {
       });
     } else {
       return new Response(
-        JSON.stringify({ error: result.error.message }),
+        JSON.stringify({ error: result.error?.message || 'Bir hata oluştu' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
