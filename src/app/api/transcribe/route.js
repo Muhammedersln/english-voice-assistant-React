@@ -23,14 +23,17 @@ export async function POST(req) {
       body: formData,
     });
 
+    // API yanıtını alın
     const result = await response.json();
 
+    // Yanıtı kontrol et
     if (response.ok) {
       return new Response(JSON.stringify({ text: result.text }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     } else {
+      // API'den gelen hata detaylarını logla
       console.error('API Hatası:', result.error); // Hata detaylarını loglayın
       return new Response(
         JSON.stringify({ error: result.error.message || 'Bilinmeyen hata' }),
@@ -38,6 +41,7 @@ export async function POST(req) {
       );
     }
   } catch (error) {
+    // Sunucu hatalarını logla
     console.error('Sunucu hatası:', error); // Sunucu hatalarını loglayın
     return new Response(
       JSON.stringify({ error: 'Sunucu hatası', details: error.message }),
