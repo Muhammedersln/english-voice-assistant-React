@@ -1,40 +1,23 @@
 import axios from 'axios';
-import FormData from 'form-data';
 
 export async function POST(req) {
   try {
-    // Ses dosyasını Buffer formatına dönüştür
-    const audioBuffer = await req.arrayBuffer();
-    const audioBufferConverted = Buffer.from(audioBuffer);
-
-    // FormData oluştur ve dosya ile model bilgilerini ekle
-    const formData = new FormData();
-    formData.append('file', audioBufferConverted, {
-      filename: 'audio.wav',
-      contentType: 'audio/wav',
-    });
-    formData.append('model', 'whisper-1');
-
-    // OpenAI API'ye istek gönder
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+    const response = await axios.get('https://api.openai.com/v1/models', {
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(), // FormData başlıkları
-      },
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      }
     });
 
-    // Başarılı yanıt durumunda JSON yanıtı döndür
-    return new Response(JSON.stringify({ text: response.data.text }), {
+    return new Response(JSON.stringify(response.data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    // Hata detaylarını logla ve yanıt döndür
-    console.error("Hata Detayları:", error.response ? error.response.data : error.message);
+    console.error("API Key Hatası Detayları:", error.response ? error.response.data : error.message);
 
     return new Response(
       JSON.stringify({
-        error: 'Sunucu hatası',
+        error: 'API anahtarında sorun var',
         details: error.response ? error.response.data : error.message,
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
