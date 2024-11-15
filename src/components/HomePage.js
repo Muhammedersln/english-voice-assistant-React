@@ -15,9 +15,8 @@ export default function HomePage() {
   const voices = [
     { id: "9BWtsMINqrJLrRacOk9x", name: "Ses 1" },
     { id: "XB0fDUnXU5powFXDhCwa", name: "Ses 2" },
-    { id: "KIJiZX0SdfrXAR9Xomm8", name: "Ses 3" },
-    { id: "onwK4e9ZLuTAKqWW03F9", name: "Ses 4" },
-    { id: "D38z5RcWu1voky8WS1ja", name: "Ses 5" },
+    { id: "onwK4e9ZLuTAKqWW03F9", name: "Ses 3" },
+    { id: "D38z5RcWu1voky8WS1ja", name: "Ses 4" },
   ];
 
   const resetStates = () => {
