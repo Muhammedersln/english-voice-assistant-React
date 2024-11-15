@@ -46,11 +46,16 @@ export default function HomePage() {
 
       if (!response.ok) {
         throw new Error("Konuşma verisi kaydedilemedi.");
-      } 
+      }
     } catch (error) {
       console.error("Veritabanına kaydetme hatası:", error);
       toast.error("Konuşma verisi kaydedilemedi.");
     }
+  };
+
+  // Function to strip SSML tags from text
+  const stripSSMLTags = (ssmlText) => {
+    return ssmlText.replace(/<\/?[^>]+(>|$)|```ssml|```/g, "").trim();
   };
 
   const handleSendToChatGPT = async (text) => {
@@ -60,13 +65,21 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcribedText: text }),
       });
-
+  
       if (response.ok) {
         const data = await response.json();
-        // `aiResponse` güncelleniyor
-        setAiResponse(data.aiResponse);
-
-        // Yanıtı metin seslendirme API'sine gönder
+  
+        // Orijinal SSML yanıtı konsola yazdır
+        console.log("SSML Yanıt:", data.aiResponse);
+  
+        // SSML etiketlerini kaldır ve konsola yazdır
+        const plainTextResponse = stripSSMLTags(data.aiResponse);
+        console.log("Etiketsiz Yanıt:", plainTextResponse);
+  
+        // Etiketsiz yanıtı `aiResponse` olarak kaydet
+        setAiResponse(plainTextResponse);
+  
+        // SSML formatındaki yanıtı metin seslendirme API'sine gönder
         await handleTextToSpeech(data.aiResponse);
       } else {
         toast.error("ChatGPT API çağrısı başarısız.");
@@ -76,6 +89,7 @@ export default function HomePage() {
       toast.error("ChatGPT API çağrısı hatası.");
     }
   };
+  
 
   const handleTextToSpeech = async (text) => {
     try {
@@ -103,7 +117,7 @@ export default function HomePage() {
       handleSendToChatGPT(transcribedText);
     }
   }, [transcribedText]);
-  console.log(aiResponse);
+
   return (
     <div className="bg-bgpage min-h-screen flex flex-col pb-28 overflow-hidden">
       <Toaster position="top-center" reverseOrder={false} />
