@@ -8,7 +8,7 @@ import RecordButton from "./RecordButton";
 export default function HomePage() {
   const { data: session } = useSession();
   const [transcribedText, setTranscribedText] = useState("");
-  const [aiResponse, setAiResponse] = useState("");
+  const [conversationHistory, setConversationHistory] = useState([]);
   const [audioUrl, setAudioUrl] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("9BWtsMINqrJLrRacOk9x");
 
@@ -19,42 +19,40 @@ export default function HomePage() {
     { id: "D38z5RcWu1voky8WS1ja", name: "Ses 4" },
   ];
 
-  const resetStates = () => {
-    setTranscribedText("");
-    setAiResponse("");
-    setAudioUrl("");
-  };
-
+  // Reset state on component mount
   useEffect(() => {
-    resetStates();
+    setTranscribedText("");
+    setConversationHistory([]);
+    setAudioUrl("");
   }, []);
 
+  // Trigger translation whenever transcribed text is updated
   useEffect(() => {
-    if (aiResponse) {
-      saveSpeechToDatabase();
+    if (transcribedText) {
+      translateTextToEnglish(transcribedText);
     }
-  }, [aiResponse]);
+  }, [transcribedText]);
 
-  const saveSpeechToDatabase = async () => {
+  const translateTextToEnglish = async (text) => {
     try {
-      const response = await fetch("/api/saveSpeech", {
+      const response = await fetch("/api/translateToEnglish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcribedText, aiResponse }),
+        body: JSON.stringify({ text }),
       });
 
-      if (!response.ok) {
-        throw new Error("Konuşma verisi kaydedilemedi.");
+      if (response.ok) {
+        const data = await response.json();
+        const translatedText = data.translatedText;
+        addMessageToHistory(translatedText, true);
+        handleSendToChatGPT(translatedText);
+      } else {
+        toast.error("Çeviri API çağrısı başarısız.");
       }
     } catch (error) {
-      console.error("Veritabanına kaydetme hatası:", error);
-      toast.error("Konuşma verisi kaydedilemedi.");
+      console.error("Çeviri API çağrısı hatası:", error);
+      toast.error("Çeviri API çağrısı hatası.");
     }
-  };
-
-  // Function to strip SSML tags from text
-  const stripSSMLTags = (ssmlText) => {
-    return ssmlText.replace(/<\/?[^>]+(>|$)|```ssml|```/g, "").trim();
   };
 
   const handleSendToChatGPT = async (text) => {
@@ -62,24 +60,18 @@ export default function HomePage() {
       const response = await fetch("/api/getChatGPTFeedBack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcribedText: text }),
+        body: JSON.stringify({
+          transcribedText: text,
+          conversationHistory, // Konuşma geçmişini API'ye gönderiyoruz
+        }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
-  
-        // Orijinal SSML yanıtı konsola yazdır
-        console.log("SSML Yanıt:", data.aiResponse);
-  
-        // SSML etiketlerini kaldır ve konsola yazdır
+        console.log("ChatGPT API Response Data:", data); // Yanıtı kontrol et
         const plainTextResponse = stripSSMLTags(data.aiResponse);
-        console.log("Etiketsiz Yanıt:", plainTextResponse);
-  
-        // Etiketsiz yanıtı `aiResponse` olarak kaydet
-        setAiResponse(plainTextResponse);
-  
-        // SSML formatındaki yanıtı metin seslendirme API'sine gönder
-        await handleTextToSpeech(data.aiResponse);
+        addMessageToHistory(plainTextResponse, false);
+        handleTextToSpeech(data.aiResponse);
       } else {
         toast.error("ChatGPT API çağrısı başarısız.");
       }
@@ -88,8 +80,6 @@ export default function HomePage() {
       toast.error("ChatGPT API çağrısı hatası.");
     }
   };
-  
-
   const handleTextToSpeech = async (text) => {
     try {
       const response = await fetch("/api/elevenlabs", {
@@ -100,8 +90,7 @@ export default function HomePage() {
 
       if (response.ok) {
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
+        setAudioUrl(URL.createObjectURL(blob));
       } else {
         toast.error("Text-to-speech API çağrısı başarısız.");
       }
@@ -111,15 +100,21 @@ export default function HomePage() {
     }
   };
 
-  useEffect(() => {
-    if (transcribedText) {
-      handleSendToChatGPT(transcribedText);
-    }
-  }, [transcribedText]);
+  const addMessageToHistory = (text, isUser) => {
+    setConversationHistory((prev) => [
+      ...prev,
+      { role: isUser ? "user" : "assistant", content: text }, // role ve content ekliyoruz
+    ]);
+  };
+
+
+  const stripSSMLTags = (ssmlText) =>
+    ssmlText.replace(/<\/?[^>]+(>|$)|```ssml|```/g, "").trim();
 
   return (
     <div className="bg-bgpage min-h-screen flex flex-col pb-28 overflow-hidden">
       <Toaster position="top-center" reverseOrder={false} />
+
       <div className="max-w-md w-1/3 mx-auto flex items-center space-x-2 my-5">
         <label htmlFor="voiceSelect" className="text-md text-gray-500">Ses Seçin:</label>
         <select
@@ -136,19 +131,22 @@ export default function HomePage() {
         </select>
       </div>
 
-      <div>
-        <RecordButton setTranscribedText={setTranscribedText} isLoggedIn={!!session} />
-      </div>
+      <RecordButton setTranscribedText={setTranscribedText} isLoggedIn={!!session} />
 
-      <div className="bg-secondary h-56 mx-16 rounded-md p-5 flex flex-col gap-4">
-        <div className="bg-third rounded-md p-3 h-1/2 flex items-center justify-center text-gray-800">
-          <span className={transcribedText ? "text-white" : "text-gray-800"}>
-            {transcribedText || "Konuşmanız..."}
-          </span>
-        </div>
-        <div className="bg-third rounded-md p-3 h-1/2 flex items-center justify-center text-gray-800">
-          <span>{aiResponse || "Sesli asistan cevabı..."}</span>
-        </div>
+      <div className="bg-secondary h-56 mx-16 rounded-md p-5 flex flex-col gap-4 overflow-y-auto">
+        {conversationHistory.length > 0 ? (
+          conversationHistory.map((message, index) => (
+            <div
+              key={index}
+              className={`mt-2 p-2 rounded-md ${message.role === "user" ? "bg-bgpage text-left" : "bg-third text-right"
+                }`}
+            >
+              {message.content}
+            </div>
+          ))
+        ) : (
+          <span>Sohbet Başlatın</span>
+        )}
       </div>
 
       {audioUrl && (

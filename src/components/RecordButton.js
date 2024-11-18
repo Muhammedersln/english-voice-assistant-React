@@ -8,10 +8,11 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
+  const startTimeRef = useRef(null); // Başlangıç zamanı referansı
 
   const startRecording = async () => {
     if (!isLoggedIn) {
-      toast.error("Önce giriş yapmalısınızzzz.");
+      toast.error("Önce giriş yapmalısınız.");
       return;
     }
 
@@ -48,6 +49,8 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         }
       };
 
+      // Başlangıç zamanını kaydet
+      startTimeRef.current = Date.now();
       mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (error) {
@@ -56,15 +59,30 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
+    if (mediaRecorderRef.current) {
+      const duration = Date.now() - startTimeRef.current; // Geçen süreyi hesapla
+
+      if (duration < 1000) { // Eğer süre 1 saniyeden kısaysa
+        toast.error("Daha uzun süre basılı tutmalısınız.");
+        setIsRecording(false);
+        return;
+      }
+
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
   return (
     <div className="flex flex-col items-center my-10 gap-3 ">
       <button
-        onClick={isRecording ? stopRecording : startRecording}
-        className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${isRecording ? "bg-red-500" : "bg-primary"}`}
+        onMouseDown={startRecording}
+        onMouseUp={stopRecording}
+        onTouchStart={startRecording}
+        onTouchEnd={stopRecording}
+        className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${
+          isRecording ? "bg-red-500" : "bg-primary"
+        }`}
       >
         {isRecording ? (
           <span className="flex justify-center items-center text-black ">
@@ -76,7 +94,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           </span>
         )}
       </button>
-      <p className="text-white">Bas ve Konuş</p>
+      <p className="text-white">Basılı Tut ve Konuş</p>
     </div>
   );
 }
