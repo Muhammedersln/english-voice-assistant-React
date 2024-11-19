@@ -105,7 +105,6 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           </span>
         )}
       </button>
-      <p className="text-white mt-5 select-none">Basılı Tut ve Konuş</p>
     </div>
   );
 }
