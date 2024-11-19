@@ -31,17 +31,16 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
 
     try {
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current, { mimeType: "audio/webm" });
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         audioChunksRef.current = [];
 
-        // Akış ve mediaRecorder nesnelerini durdurup sıfırlıyoruz
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
@@ -52,7 +51,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           const response = await fetch("/api/transcribe", {
             method: "POST",
             body: audioBlob,
-            headers: { "Content-Type": "audio/wav" },
+            headers: { "Content-Type": "audio/webm" },
           });
 
           if (response.ok) {
