@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 
@@ -8,7 +8,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
-  const startTimeRef = useRef(null); // Başlangıç zamanı referansı
+  const startTimeRef = useRef(null);
 
   const startRecording = async () => {
     if (!isLoggedIn) {
@@ -49,7 +49,6 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         }
       };
 
-      // Başlangıç zamanını kaydet
       startTimeRef.current = Date.now();
       mediaRecorderRef.current.start();
       setIsRecording(true);
@@ -60,9 +59,9 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
-      const duration = Date.now() - startTimeRef.current; // Geçen süreyi hesapla
+      const duration = Date.now() - startTimeRef.current;
 
-      if (duration < 1000) { // Eğer süre 1 saniyeden kısaysa
+      if (duration < 1000) {
         toast.error("Daha uzun süre basılı tutmalısınız.");
         setIsRecording(false);
         return;
@@ -73,23 +72,35 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
     }
   };
 
+  useEffect(() => {
+    const handlePointerDown = () => startRecording();
+    const handlePointerUp = () => stopRecording();
+
+    const button = document.getElementById("record-button");
+
+    button.addEventListener("pointerdown", handlePointerDown);
+    button.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      button.removeEventListener("pointerdown", handlePointerDown);
+      button.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col items-center my-10 gap-3 ">
+    <div className="flex flex-col items-center my-10 gap-3">
       <button
-        onMouseDown={startRecording}
-        onMouseUp={stopRecording}
-        onTouchStart={startRecording}
-        onTouchEnd={stopRecording}
+        id="record-button"
         className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${
           isRecording ? "bg-red-500" : "bg-primary"
         }`}
       >
         {isRecording ? (
-          <span className="flex justify-center items-center text-black ">
+          <span className="flex justify-center items-center text-black">
             <FaMicrophoneSlash size={60} />
           </span>
         ) : (
-          <span className="flex justify-center items-center text-black ">
+          <span className="flex justify-center items-center text-black">
             <FaMicrophone size={60} />
           </span>
         )}
