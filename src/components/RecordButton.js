@@ -14,9 +14,17 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   useEffect(() => {
     const requestMicrophonePermission = async () => {
       try {
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+
+        if (permissionStatus.state !== 'granted') {
+          toast.error("Mikrofon izni verilmedi veya engellendi. Lütfen tarayıcı ayarlarından izin verin.");
+          return;
+        }
+
+        // İzin verildiyse `getUserMedia` çağrısı yapıyoruz
         await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (error) {
-        console.warn("Microphone access denied.");
+        console.warn("Microphone access denied or not available.", error);
       }
     };
     requestMicrophonePermission();
