@@ -19,14 +19,12 @@ export default function HomePage() {
     { id: "D38z5RcWu1voky8WS1ja", name: "Ses 4" },
   ];
 
-  // Reset state on component mount
   useEffect(() => {
     setTranscribedText("");
     setConversationHistory([]);
     setAudioUrl("");
   }, []);
 
-  // Trigger translation whenever transcribed text is updated
   useEffect(() => {
     if (transcribedText) {
       translateTextToEnglish(transcribedText);
@@ -62,13 +60,12 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transcribedText: text,
-          conversationHistory, // Konuşma geçmişini API'ye gönderiyoruz
+          conversationHistory,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log("ChatGPT API Response Data:", data); // Yanıtı kontrol et
         const plainTextResponse = stripSSMLTags(data.aiResponse);
         addMessageToHistory(plainTextResponse, false);
         handleTextToSpeech(data.aiResponse);
@@ -80,6 +77,7 @@ export default function HomePage() {
       toast.error("ChatGPT API çağrısı hatası.");
     }
   };
+
   const handleTextToSpeech = async (text) => {
     try {
       const response = await fetch("/api/elevenlabs", {
@@ -103,15 +101,13 @@ export default function HomePage() {
   const addMessageToHistory = (text, isUser) => {
     setConversationHistory((prev) => [
       ...prev,
-      { role: isUser ? "user" : "assistant", content: text }, // role ve content ekliyoruz
+      { role: isUser ? "user" : "assistant", content: text },
     ]);
   };
-
 
   const stripSSMLTags = (ssmlText) =>
     ssmlText.replace(/<\/?[^>]+(>|$)|```ssml|```/g, "").trim();
 
-  // Add example phrases list
   const examplePhrases = [
     "Hello, how are you?",
     "What's your favorite color?",
@@ -120,24 +116,25 @@ export default function HomePage() {
     "What is your name ?"
   ];
 
-  // Function to handle example phrase click
   const handleExamplePhraseClick = (phrase) => {
-    addMessageToHistory(phrase, true); // Adds the phrase to conversation as if user sent it
-    handleSendToChatGPT(phrase); // Sends phrase to ChatGPT
+    addMessageToHistory(phrase, true);
+    handleSendToChatGPT(phrase);
   };
 
   return (
-    <div className="bg-bgpage min-h-screen flex flex-col pb-28 overflow-hidden">
+    <div className="bg-bgpage min-h-screen flex flex-col pb-10 overflow-hidden">
       <Toaster position="top-center" reverseOrder={false} />
 
       {/* Voice Selector */}
-      <div className="max-w-md w-1/3 mx-auto flex items-center space-x-2 my-5">
-        <label htmlFor="voiceSelect" className="text-md text-gray-500">Select Voice:</label>
+      <div className="max-w-md w-11/12 md:w-1/2 lg:w-1/3 mx-auto flex items-center space-x-2 my-5">
+        <label htmlFor="voiceSelect" className="text-md text-gray-500">
+          Select Voice:
+        </label>
         <select
           id="voiceSelect"
           value={selectedVoice}
           onChange={(e) => setSelectedVoice(e.target.value)}
-          className="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+          className="block py-2.5 px-2 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200"
         >
           {voices.map((voice) => (
             <option key={voice.id} value={voice.id}>
@@ -146,11 +143,12 @@ export default function HomePage() {
           ))}
         </select>
       </div>
+
       <RecordButton setTranscribedText={setTranscribedText} isLoggedIn={!!session} />
 
       {/* Conversation History */}
-      <div className="flex items-center justify-center">
-        <div className="bg-secondary h-72 w-2/5 rounded-3xl p-5 flex flex-col gap-2 overflow-y-auto">
+      <div className="flex items-center justify-center my-4">
+        <div className="bg-secondary h-64 w-11/12 md:w-3/4 lg:w-2/5 rounded-3xl p-4 flex flex-col gap-2 overflow-y-auto">
           {conversationHistory.length > 0 ? (
             [...conversationHistory].reverse().map((message, index) => (
               <div
@@ -167,10 +165,9 @@ export default function HomePage() {
         </div>
       </div>
 
-
       {/* Audio Player */}
       {audioUrl && (
-        <div className="my-4 mx-16 p-4 bg-bgpage rounded-lg shadow-lg">
+        <div className="my-4 mx-4 md:mx-16 p-4 bg-bgpage rounded-lg shadow-lg">
           <audio
             controls
             src={audioUrl}
@@ -182,12 +179,12 @@ export default function HomePage() {
       )}
 
       {/* Example Phrases */}
-      <div className="flex justify-center space-x-3 mt-10 ">
+      <div className="flex flex-wrap justify-center space-x-2 mt-5 px-4">
         {examplePhrases.map((phrase, index) => (
           <button
             key={index}
             onClick={() => handleExamplePhraseClick(phrase)}
-            className="px-4 text-lg py-2 bg-third text-white rounded-lg shadow-md hover:bg-bgpage focus:outline-none focus:ring-2 focus:ring-offset-2"
+            className="m-1 px-4 py-2 text-md bg-third text-white rounded-lg shadow-md hover:bg-bgpage focus:outline-none focus:ring-2 focus:ring-offset-2"
           >
             {phrase}
           </button>
