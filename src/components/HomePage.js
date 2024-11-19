@@ -174,7 +174,7 @@ export default function HomePage() {
             className="w-full h-12 bg-bgpage rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2"
             playsInline
             autoPlay
-            onPlay={(e) => { e.target.playbackRate = 0.75; }} // Burada playbackRate'i ayarlayın
+            onPlay={(e) => { e.target.playbackRate = 0.8; }} // Burada playbackRate'i ayarlayın
           />
         </div>
       )}
