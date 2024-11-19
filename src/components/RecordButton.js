@@ -9,9 +9,10 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
   const startTimeRef = useRef(null);
+  const touchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Request microphone permission on mount
+    // Mikrofon iznini önceden isteme
     const requestMicrophonePermission = async () => {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -19,7 +20,6 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         console.warn("Microphone access denied.");
       }
     };
-
     requestMicrophonePermission();
   }, []);
 
@@ -64,7 +64,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
       };
 
       startTimeRef.current = Date.now();
-      setTimeout(() => {
+      touchTimeoutRef.current = setTimeout(() => {
         mediaRecorderRef.current.start();
         setIsRecording(true);
       }, 100);
@@ -75,7 +75,8 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
 
   const stopRecording = (event) => {
     event.preventDefault();
-    if (mediaRecorderRef.current) {
+    clearTimeout(touchTimeoutRef.current);
+    if (isRecording && mediaRecorderRef.current) {
       const duration = Date.now() - startTimeRef.current;
       if (duration < 1000) {
         toast.error("Daha uzun süre basılı tutmalısınız.");
@@ -92,8 +93,15 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
       <button
         onMouseDown={startRecording}
         onMouseUp={stopRecording}
-        onTouchStart={startRecording}
-        onTouchEnd={stopRecording}
+        onMouseLeave={stopRecording}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          startRecording(e);
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          stopRecording(e);
+        }}
         style={{ userSelect: "none", WebkitUserSelect: "none" }}
         className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${isRecording ? "bg-red-500" : "bg-primary"}`}
       >
