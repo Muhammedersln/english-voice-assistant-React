@@ -145,7 +145,6 @@ export default function HomePage() {
       </div>
 
       <RecordButton setTranscribedText={setTranscribedText} isLoggedIn={!!session} />
-      {/* <p className="text-white  text-center flex justify-center items-center" style={{ userSelect: "none" }}>Basılı Tut ve Konuş</p> */}
 
 
       {/* Conversation History */}
