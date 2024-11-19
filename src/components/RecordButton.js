@@ -9,9 +9,10 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
+  const pressTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Cihaz türünü belirleme
+    // Determine device type
     setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
 
     const requestMicrophonePermission = async () => {
@@ -31,52 +32,64 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
     }
 
     try {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+      // Start a timeout to check for short button presses
+      pressTimeoutRef.current = setTimeout(async () => {
+        streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(streamRef.current);
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
 
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
-        audioChunksRef.current = [];
+        mediaRecorderRef.current.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+          audioChunksRef.current = [];
 
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
-        mediaRecorderRef.current = null;
-
-        try {
-          const response = await fetch("/api/transcribe", {
-            method: "POST",
-            body: audioBlob,
-            headers: { "Content-Type": "audio/wav" },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setTranscribedText(data.text);
-          } else {
-            toast.error("Transkripsiyon hatası.");
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+            streamRef.current = null;
           }
-        } catch (error) {
-          toast.error("Transkripsiyon API çağrısı hatası.");
-        }
-      };
+          mediaRecorderRef.current = null;
 
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
+          try {
+            const response = await fetch("/api/transcribe", {
+              method: "POST",
+              body: audioBlob,
+              headers: { "Content-Type": "audio/wav" },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              setTranscribedText(data.text);
+            } else {
+              toast.error("Transkripsiyon hatası.");
+            }
+          } catch (error) {
+            toast.error("Transkripsiyon API çağrısı hatası.");
+          }
+        };
+
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+      }, 1000); // Set a 1-second delay before starting recording
     } catch (error) {
       toast.error("Mikrofon erişimi reddedildi.");
     }
   };
 
   const stopRecording = () => {
+    // Clear the timeout if button released before 1 second
+    if (pressTimeoutRef.current) {
+      clearTimeout(pressTimeoutRef.current);
+      pressTimeoutRef.current = null;
+    }
+
     if (isRecording && mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+    } else if (!isRecording) {
+      // If button was released before 1 second
+      toast.error("Mikrofonu en az 1 saniye basılı tutmalısınız.");
     }
   };
 
