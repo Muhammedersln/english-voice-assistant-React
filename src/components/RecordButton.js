@@ -73,8 +73,14 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   };
 
   useEffect(() => {
-    const handlePointerDown = () => startRecording();
-    const handlePointerUp = () => stopRecording();
+    const handlePointerDown = (e) => {
+      e.preventDefault(); // Dokunma olaylarını önlemek için
+      startRecording();
+    };
+    const handlePointerUp = (e) => {
+      e.preventDefault(); // Dokunma olaylarını önlemek için
+      stopRecording();
+    };
 
     const button = document.getElementById("record-button");
 
@@ -91,6 +97,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
     <div className="flex flex-col items-center my-10 gap-3">
       <button
         id="record-button"
+        style={{ userSelect: "none", WebkitUserSelect: "none" }} // Seçimi devre dışı bırakma
         className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${
           isRecording ? "bg-red-500" : "bg-primary"
         }`}
@@ -105,6 +112,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           </span>
         )}
       </button>
+      <p className="text-white mt-5 select-none" style={{ userSelect: "none", WebkitUserSelect: "none" }}>Basılı Tut ve Konuş</p>
     </div>
   );
 }
