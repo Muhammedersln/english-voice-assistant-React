@@ -150,7 +150,7 @@ export default function HomePage() {
 
       {/* Conversation History */}
       <div className="flex items-center justify-center">
-        <div className="bg-secondary h-72 w-3/5 rounded-3xl p-5 flex flex-col gap-2 overflow-y-auto">
+        <div className="bg-secondary h-72 w-2/5 rounded-3xl p-5 flex flex-col gap-2 overflow-y-auto">
           {conversationHistory.length > 0 ? (
             [...conversationHistory].reverse().map((message, index) => (
               <div
