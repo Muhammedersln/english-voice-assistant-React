@@ -133,9 +133,9 @@ export default function HomePage() {
 
       <RecordButton setTranscribedText={setTranscribedText} isLoggedIn={!!session} />
 
-      <div className="bg-secondary h-56 mx-16 rounded-md p-5 flex flex-col gap-4 overflow-y-auto">
+      <div className="bg-secondary h-72 mx-16 rounded-md p-5 flex flex-col gap-4 overflow-y-auto">
         {conversationHistory.length > 0 ? (
-          conversationHistory.map((message, index) => (
+          [...conversationHistory].reverse().map((message, index) => (
             <div
               key={index}
               className={`mt-2 p-2 rounded-md ${message.role === "user" ? "bg-bgpage text-left" : "bg-third text-right"
