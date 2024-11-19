@@ -14,6 +14,7 @@ export async function POST(req) {
     },
     body: JSON.stringify({
       text,
+      voice_settings: { stability: 0.5, similarity_boost: 0.75 },
     }),
   });
 
