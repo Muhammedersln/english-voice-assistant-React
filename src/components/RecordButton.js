@@ -12,7 +12,6 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const touchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Mikrofon iznini önceden isteme
     const requestMicrophonePermission = async () => {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -42,8 +41,12 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
         audioChunksRef.current = [];
 
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
+        // Akış ve mediaRecorder nesnelerini durdurup sıfırlıyoruz
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
+        mediaRecorderRef.current = null;
 
         try {
           const response = await fetch("/api/transcribe", {
@@ -76,6 +79,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const stopRecording = (event) => {
     event.preventDefault();
     clearTimeout(touchTimeoutRef.current);
+
     if (isRecording && mediaRecorderRef.current) {
       const duration = Date.now() - startTimeRef.current;
       if (duration < 1000) {
@@ -83,6 +87,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         setIsRecording(false);
         return;
       }
+      
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
