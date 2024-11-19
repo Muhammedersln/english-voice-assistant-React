@@ -84,6 +84,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         onMouseUp={stopRecording}
         onTouchStart={startRecording}
         onTouchEnd={stopRecording}
+        style={{ userSelect: "none", WebkitUserSelect: "none" }} // Seçimi devre dışı bırakma
         className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${
           isRecording ? "bg-red-500" : "bg-primary"
         }`}
@@ -98,7 +99,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           </span>
         )}
       </button>
-      <p className="text-white">Basılı Tut ve Konuş</p>
+      <p className="text-white mt-5 select-none" style={{ userSelect: "none", WebkitUserSelect: "none" }}>Basılı Tut ve Konuş</p>
     </div>
   );
 }
