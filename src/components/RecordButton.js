@@ -14,17 +14,9 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   useEffect(() => {
     const requestMicrophonePermission = async () => {
       try {
-        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-
-        if (permissionStatus.state !== 'granted') {
-          toast.error("Mikrofon izni verilmedi veya engellendi. Lütfen tarayıcı ayarlarından izin verin.");
-          return;
-        }
-
-        // İzin verildiyse `getUserMedia` çağrısı yapıyoruz
         await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (error) {
-        console.warn("Microphone access denied or not available.", error);
+        console.warn("Microphone access denied.");
       }
     };
     requestMicrophonePermission();
@@ -39,16 +31,17 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
 
     try {
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(streamRef.current, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current);
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
         audioChunksRef.current = [];
 
+        // Akış ve mediaRecorder nesnelerini durdurup sıfırlıyoruz
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
@@ -59,7 +52,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           const response = await fetch("/api/transcribe", {
             method: "POST",
             body: audioBlob,
-            headers: { "Content-Type": "audio/webm" },
+            headers: { "Content-Type": "audio/wav" },
           });
 
           if (response.ok) {
