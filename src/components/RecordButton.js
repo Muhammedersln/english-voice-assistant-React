@@ -8,10 +8,12 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
-  const startTimeRef = useRef(null);
-  const touchTimeoutRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Cihaz türünü belirleme
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+
     const requestMicrophonePermission = async () => {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -22,8 +24,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
     requestMicrophonePermission();
   }, []);
 
-  const startRecording = async (event) => {
-    event.preventDefault();
+  const startRecording = async () => {
     if (!isLoggedIn) {
       toast.error("Önce giriş yapmalısınız.");
       return;
@@ -41,7 +42,6 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
         audioChunksRef.current = [];
 
-        // Akış ve mediaRecorder nesnelerini durdurup sıfırlıyoruz
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
@@ -66,47 +66,35 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
         }
       };
 
-      startTimeRef.current = Date.now();
-      touchTimeoutRef.current = setTimeout(() => {
-        mediaRecorderRef.current.start();
-        setIsRecording(true);
-      }, 100);
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
     } catch (error) {
       toast.error("Mikrofon erişimi reddedildi.");
     }
   };
 
-  const stopRecording = (event) => {
-    event.preventDefault();
-    clearTimeout(touchTimeoutRef.current);
-
+  const stopRecording = () => {
     if (isRecording && mediaRecorderRef.current) {
-      const duration = Date.now() - startTimeRef.current;
-      if (duration < 1000) {
-        toast.error("Daha uzun süre basılı tutmalısınız.");
-        setIsRecording(false);
-        return;
-      }
-      
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+    }
+  };
+
+  const handleClick = (event) => {
+    event.preventDefault();
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
     }
   };
 
   return (
     <div className="flex flex-col items-center my-10 gap-3">
       <button
-        onMouseDown={startRecording}
-        onMouseUp={stopRecording}
-        onMouseLeave={stopRecording}
-        onTouchStart={(e) => {
-          e.preventDefault();
-          startRecording(e);
-        }}
-        onTouchEnd={(e) => {
-          e.preventDefault();
-          stopRecording(e);
-        }}
+        onMouseDown={!isMobile ? startRecording : undefined}
+        onMouseUp={!isMobile ? stopRecording : undefined}
+        onClick={isMobile ? handleClick : undefined}
         style={{ userSelect: "none", WebkitUserSelect: "none" }}
         className={`w-36 h-36 rounded-full text-white font-semibold shadow-lg ${isRecording ? "bg-red-500" : "bg-primary"}`}
       >
@@ -120,7 +108,7 @@ export default function RecordButton({ setTranscribedText, isLoggedIn }) {
           </span>
         )}
       </button>
-      <p className="text-white mt-5 select-none" style={{ userSelect: "none", WebkitUserSelect: "none" }}>Basılı Tut ve Konuş</p>
+      <p className="text-white mt-5 select-none" style={{ userSelect: "none", WebkitUserSelect: "none" }}>Dokun ve Konuş</p>
     </div>
   );
 }
